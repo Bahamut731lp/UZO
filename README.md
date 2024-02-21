@@ -6,3 +6,4 @@
 </p>
 
 Tento repozitář obsahuje zdrojové kódy k úlohám z předmětu [Úvod do zpracování obrazu](https://stag.tul.cz/ects/fakulty/FM/ITE/UZO).
+
