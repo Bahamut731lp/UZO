@@ -1,60 +1,76 @@
-import cv2
 import numpy as np
+import cv2
+import math
+import os
 
-def calculate_histogram(roi):
-    hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv_roi, (0, 60, 32), (180, 255, 255))
-    hist = cv2.calcHist([hsv_roi], [0], mask, [180], [0, 180])
-    cv2.normalize(hist, hist, 0, 255, cv2.NORM_MINMAX)
-    return hist
+x1, y1, x2, y2 = 0, 0, 0, 0
 
-def apply_camshift(frame, track_window, hist):
-    x, y, w, h = track_window
+def zeroth_moment(back_projection):
+    x, y = np.meshgrid(np.arange(back_projection.shape[1]), np.arange(back_projection.shape[0]))
+
+    x_t = np.sum(x * back_projection) / np.sum(back_projection)
+    y_t = np.sum(y * back_projection) / np.sum(back_projection)
+
+    return x_t, y_t
+
+def first_frame(bgr):
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV) 
+    hue = hsv[:,:,0]
+    back_projection = roi_hist[hue]
+    x_t, y_t = zeroth_moment(back_projection)
+
+    return x_t, y_t
+
+def other_frames(bgr, prev_xy):
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV) 
+    hue = hsv[:,:,0]
+    back_projection = roi_hist[hue]
+    back_projection = back_projection[prev_xy[1]:prev_xy[3], prev_xy[0]:prev_xy[2]]
     
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    dst = cv2.calcBackProject([hsv], [0], hist, [0, 180], 1)
+    print("xy: ", prev_xy)
+    tmp_x_t, tmp_y_t = zeroth_moment(back_projection)
     
-    # Apply meanshift to get the new location
-    ret, track_window = cv2.CamShift(dst, track_window, termination_criteria)
-    
-    # Draw the tracked region on the frame
-    pts = cv2.boxPoints(ret)
-    pts = np.int0(pts)
-    cv2.polylines(frame, [pts], True, (0, 255, 0), 2)
-    
-    return track_window
+    x_t = int(prev_xy[0] + tmp_x_t)
+    y_t = int(prev_xy[1] + tmp_y_t)
+    return x_t, y_t
 
-# Read the video
-cap = cv2.VideoCapture('./data/cv02_hrnecek.mp4')
+if __name__ == "__main__":
+    image = cv2.imread('./data/cv02_vzor_hrnecek.bmp')
+    cap = cv2.VideoCapture('./data/cv02_hrnecek.mp4')
 
-# Read the cropped region of interest (ROI)
-roi = cv2.imread('./data/cv02_vzor_hrnecek.bmp')
+    y1, x1, _ = np.floor_divide(image.shape, 2)
+    y2, x2, _ = np.floor_divide(image.shape, 2)
 
-# Set initial window to full ROI
-x, y, w, h = 0, 0, roi.shape[1], roi.shape[0]
-track_window = (x, y, w, h)
+    frame = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    hue = frame[:,:,0]
 
-# Calculate histogram of the ROI
-hist = calculate_histogram(roi)
+    roi_hist, _ = np.histogram(hue, 180, (0, 180))
+    roi_hist = roi_hist / np.max(roi_hist)
+    is_first = True
 
-# Define termination criteria
-termination_criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
-    
-    # Apply CamShift to track the object
-    track_window = apply_camshift(frame, track_window, hist)
-    
-    # Show the frame
-    cv2.imshow('Frame', frame)
-    
-    # Exit if ESC pressed
-    if cv2.waitKey(30) & 0xFF == 27:
-        break
+        if is_first:
+            x_t, y_t = first_frame(frame)
+            is_first = False
+        else:
+            x_t, y_t = other_frames(frame, prev_xy)   
 
-# Release resources
-cap.release()
-cv2.destroyAllWindows()
+        # draw a rectangle around the center of mass  based on x1, y1, x2, y2
+        x1_t = abs(int(x_t - x1))
+        y1_t = abs(int(y_t - y1))
+        x2_t = abs(int(x_t + x2))
+        y2_t = abs(int(y_t + y2))
+        prev_xy = (x1_t, y1_t, x2_t, y2_t)
+        cv2.rectangle(frame, (x1_t, y1_t), (x2_t, y2_t), (0, 255, 0), 2)
+
+        cv2.imshow('img', frame)
+        
+        key = 0xFF & cv2.waitKey(30)
+        if key == 27: 
+            break
+
+    cv2.destroyAllWindows()
