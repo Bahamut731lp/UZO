@@ -15,7 +15,6 @@ laplacian = cv2.filter2D(image, -1, np.array([
     [0, 1, 0]
 ]))
 
-# TODO: Tady někdo musí vymyslet, co Chaloupka myslí "modulem gradientu"
 sobel_kernel = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
 sobel_images = [cv2.filter2D(image, -1, np.rot90(sobel_kernel, x)) for x in range(8)]
 sobel = np.max(sobel_images, axis=0)
@@ -33,7 +32,7 @@ plt.imshow(np.log(np.abs(np.fft.fftshift(np.fft.fft2(image)))), cmap='jet')
 plt.title("Spektrum")
 
 plt.subplot(rows, cols, 3)
-plt.imshow(laplacian)
+plt.imshow(laplacian, cmap="gray")
 plt.colorbar()
 plt.title("Výsledek - Laplace")
 
@@ -43,7 +42,7 @@ plt.colorbar()
 plt.title("Spektrum - Laplace")
 
 plt.subplot(rows, cols, 5)
-plt.imshow(sobel)
+plt.imshow(sobel, cmap="gray")
 plt.colorbar()
 plt.title("Výsledek - Sobel")
 
@@ -53,7 +52,7 @@ plt.colorbar()
 plt.title("Spektrum - Sobel")
 
 plt.subplot(rows, cols, 7)
-plt.imshow(kirsch)
+plt.imshow(kirsch, cmap="gray")
 plt.colorbar()
 plt.title("Výsledek - Kirsch")
 
