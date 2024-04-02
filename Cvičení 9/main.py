@@ -1,6 +1,5 @@
 from pathlib import Path
 from collections import deque
-from tabulate import tabulate
 
 import cv2
 import numpy as np
