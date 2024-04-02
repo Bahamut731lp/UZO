@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 image = cv2.imread(Path("./data/cv06_robotC.bmp").as_posix(), cv2.IMREAD_GRAYSCALE)
+image = image.astype(np.float32)
 
 rows = 2
 cols = 4
@@ -32,7 +33,7 @@ plt.imshow(np.log(np.abs(np.fft.fftshift(np.fft.fft2(image)))), cmap='jet')
 plt.title("Spektrum")
 
 plt.subplot(rows, cols, 3)
-plt.imshow(laplacian, cmap="gray")
+plt.imshow(laplacian, cmap='jet')
 plt.colorbar()
 plt.title("Výsledek - Laplace")
 
@@ -42,7 +43,7 @@ plt.colorbar()
 plt.title("Spektrum - Laplace")
 
 plt.subplot(rows, cols, 5)
-plt.imshow(sobel, cmap="gray")
+plt.imshow(sobel, cmap='jet')
 plt.colorbar()
 plt.title("Výsledek - Sobel")
 
@@ -52,7 +53,7 @@ plt.colorbar()
 plt.title("Spektrum - Sobel")
 
 plt.subplot(rows, cols, 7)
-plt.imshow(kirsch, cmap="gray")
+plt.imshow(kirsch, cmap='jet')
 plt.colorbar()
 plt.title("Výsledek - Kirsch")
 
