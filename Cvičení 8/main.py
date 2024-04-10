@@ -144,11 +144,62 @@ def process_image(path, channel, threshold, kernel_size, row):
     plt.imshow(image)
     plt.scatter(*zip(*points), marker="+", color="red")
 
+def process_image_2(path, channel, threshold, kernel_size, row):
+    image = cv2.imread(Path(path).as_posix())
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    channel_data = image[:, :, 0]
+    histogram = get_histogram(channel_data, 2)
+    
+    segmented = channel_data.copy()
+    segmented[segmented <= threshold] = 0
+    segmented[segmented > threshold] = 1
+
+    regions = bfs_coloring(segmented)
+    points = get_centers_of_mass(regions)
+
+    print(tabulate([
+        ["Obrazek", path],
+        ["Nalezenych oblasti", np.max(regions)],
+        ["Teziste", points] 
+    ]), "\n")
+
+    plt.subplot(rows, cols, (cols * row) + 1)
+    plt.imshow(image)
+    plt.title("Vstup")
+
+    plt.subplot(rows, cols, (cols * row) + 2)
+    plt.imshow(channel_data, cmap="gray")
+    plt.title("Kanál")
+
+    plt.subplot(rows, cols, (cols * row) + 3)
+    plt.plot(histogram)
+    plt.xlim(0, 255)
+    plt.ylim(0, 255)
+    plt.vlines([threshold], 0, 255, "red")
+    plt.axis('square')
+    plt.title(f"Histogram - práh {threshold}")
+
+    plt.subplot(rows, cols, (cols * row) + 4)
+    plt.title("Segmentace")
+    plt.imshow(segmented, cmap="gray")
+
+    # plt.subplot(rows, cols, (cols * row) + 5)
+    # plt.title("Otevření (E + D)")
+    # plt.imshow(opened, cmap="gray")
+
+    plt.subplot(rows, cols, (cols * row) + 6)
+    plt.title("Barvení oblastí")
+    plt.imshow(regions / np.max(regions) * 255, cmap='jet')
+
+    plt.subplot(rows, cols, (cols * row) + 7)
+    plt.title("Těžiště")
+    plt.imshow(image)
+    plt.scatter(*zip(*points), marker="+", color="red")
 
 rows = 2
 cols = 7
 
 process_image("./data/cv08_im1.bmp", 2, 60, 5, 0)
-process_image("./data/cv08_im2.bmp", 2, 82, 3, 1)
+process_image_2("./data/cv08_im2.bmp", 0, 150, 3, 1)
 
 plt.show()
